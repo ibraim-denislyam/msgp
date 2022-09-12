@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 
 	"github.com/tinylib/msgp/msgp"
 )
@@ -202,6 +203,16 @@ func (s *sizeGen) gBase(b *BaseElem) {
 		s.state = expr
 
 	} else {
+		if strings.HasPrefix(b.common.alias, "is") &&
+			strings.Index(b.common.alias, ".") == -1 {
+			s.p.printf("\ns += %s.(msgp.Sizer).Msgsize()", b.Varname())
+			return
+		}
+
+		if b.common.alias == "timestamppb.Timestamp" {
+			s.p.printf("\ns += msgp.Int64Size")
+			return
+		}
 		vname := b.Varname()
 		if b.Convert {
 			vname = tobaseConvert(b)

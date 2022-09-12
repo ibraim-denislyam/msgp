@@ -285,6 +285,17 @@ func (m *marshalGen) gBase(b *BaseElem) {
 	var echeck bool
 	switch b.Value {
 	case IDENT:
+		if strings.HasPrefix(b.common.alias, "is") &&
+			strings.Index(b.common.alias, ".") == -1 {
+			m.p.printf("\no, err = %s.(msgp.Marshaler).MarshalMsg(o)", vname)
+			break
+		}
+
+		if b.common.alias == "timestamppb.Timestamp" {
+			m.p.printf("\no = msgp.AppendInt64(o, %s.AsTime().UnixNano())", vname)
+			break
+		}
+
 		echeck = true
 		m.p.printf("\no, err = %s.MarshalMsg(o)", vname)
 	case Intf, Ext:

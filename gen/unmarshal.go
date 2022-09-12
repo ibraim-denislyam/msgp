@@ -3,6 +3,7 @@ package gen
 import (
 	"io"
 	"strconv"
+	"strings"
 )
 
 func unmarshal(w io.Writer) *unmarshalGen {
@@ -150,6 +151,17 @@ func (u *unmarshalGen) gBase(b *BaseElem) {
 	case Ext:
 		u.p.printf("\nbts, err = msgp.ReadExtensionBytes(bts, %s)", lowered)
 	case IDENT:
+		if strings.HasPrefix(b.common.alias, "is") &&
+			strings.Index(b.common.alias, ".") == -1 {
+			u.p.printf("\no, err = %s.(msgp.Unmarshaler).UnmarshalMsg(o)", lowered)
+			break
+		}
+
+		if b.alias == "timestamppb.Timestamp" {
+			u.p.printf("\nvar un int64 \nun, bts, err = msgp.ReadInt64Bytes(bts)\n%s = timestamppb.New(time.Unix(0, un))", lowered)
+			break
+		}
+
 		u.p.printf("\nbts, err = %s.UnmarshalMsg(bts)", lowered)
 	default:
 		u.p.printf("\n%s, bts, err = msgp.Read%sBytes(bts)", refname, b.BaseName())
